@@ -95,6 +95,7 @@ class Component extends DCLogic {
       { id:'t5', text:'整理旅行清單', done:false, date:'' },
     ],
     newTodo: '',
+    themePreset: 'pink',
   };
 
   HH = 52;
@@ -107,12 +108,25 @@ class Component extends DCLogic {
   weekdayNames = ['日','一','二','三','四','五','六'];
 
   get theme() {
-    const p = this.props.primaryColor ?? '#ff7aa8';
-    return { primary: p, primarySoft: '#ffe4ef', bg:'#faf7fb', panel:'#ffffff', ink:'#3f3947', sub:'#8f8899', line:'#efe9f2' };
+    return this.THEMES[this.state?.themePreset ?? 'pink'] ?? this.THEMES.pink;
   }
   get weekStartMon() { return this.props.weekStartMonday ?? true; }
 
-  STORE_KEY = 'dayble_v1';
+  _history = [];
+  _notified = new Set();
+  _notifDay = '';
+  _notifPerm = (typeof Notification !== 'undefined') ? Notification.permission : 'denied';
+
+  THEMES = {
+    pink:   { primary:'#ff7aa8', primarySoft:'#ffe4ef', bg:'#faf7fb', panel:'#ffffff', ink:'#3f3947', sub:'#8f8899', line:'#efe9f2' },
+    purple: { primary:'#a670e8', primarySoft:'#f0e8ff', bg:'#f9f7ff', panel:'#ffffff', ink:'#3b2560', sub:'#8a78b0', line:'#e8e0f8' },
+    blue:   { primary:'#4a90d9', primarySoft:'#dceeff', bg:'#f5f8ff', panel:'#ffffff', ink:'#1a2a45', sub:'#5a7898', line:'#d8e8f8' },
+    green:  { primary:'#3db882', primarySoft:'#d5f5e8', bg:'#f4faf8', panel:'#ffffff', ink:'#1a3d2e', sub:'#5a8070', line:'#c8ead8' },
+    coral:  { primary:'#f0705a', primarySoft:'#ffe8e4', bg:'#fffaf9', panel:'#ffffff', ink:'#42201a', sub:'#9a7068', line:'#f0ddd8' },
+    dark:   { primary:'#a78bfa', primarySoft:'#312e52', bg:'#1a1825', panel:'#24203a', ink:'#f0ecff', sub:'#8b85a8', line:'#3a3558' },
+  };
+
+  STORE_KEY = 'dayble_v2';
 
   componentDidMount() {
     // 讀取本機儲存的資料（同一台裝置重整不會消失）
@@ -124,6 +138,7 @@ class Component extends DCLogic {
         if (Array.isArray(d.events)) patch.events = d.events;
         if (Array.isArray(d.todos)) patch.todos = d.todos;
         if (d.hidden && typeof d.hidden === 'object') patch.hidden = d.hidden;
+        if (d.themePreset && this.THEMES[d.themePreset]) patch.themePreset = d.themePreset;
         if (Object.keys(patch).length) this.setState(patch);
       }
     } catch (e) {}
@@ -133,6 +148,16 @@ class Component extends DCLogic {
       if (m !== this.state.isMobile) this.setState({ isMobile: m, sidebarOpen: false });
     };
     window.addEventListener('resize', this._onResize);
+
+    this._onKeydown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault(); this.undoLast();
+      }
+    };
+    document.addEventListener('keydown', this._onKeydown);
+
+    this._notifInterval = setInterval(() => this._checkNotifications(), 60000);
+    this._checkNotifications();
 
     // 跨分頁同步：同一瀏覽器另開分頁修改時，這裡即時更新
     this._onStorage = (e) => {
@@ -147,11 +172,13 @@ class Component extends DCLogic {
   componentWillUnmount() {
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('storage', this._onStorage);
+    document.removeEventListener('keydown', this._onKeydown);
+    clearInterval(this._notifInterval);
   }
 
   componentDidUpdate() {
     try {
-      localStorage.setItem(this.STORE_KEY, JSON.stringify({ events: this.state.events, todos: this.state.todos, hidden: this.state.hidden }));
+      localStorage.setItem(this.STORE_KEY, JSON.stringify({ events: this.state.events, todos: this.state.todos, hidden: this.state.hidden, themePreset: this.state.themePreset }));
     } catch (e) {}
   }
 
@@ -215,6 +242,7 @@ class Component extends DCLogic {
   closeModal(){ this.setState({ modal:null }); }
   updModal(k,v){ this.setState(s=>({ modal:{ ...s.modal, [k]:v } })); }
   saveModal(){
+    this.pushUndo();
     const m=this.state.modal;
     if (!m.title.trim()){ this.flash('請輸入標題'); return; }
     if (this.toMin(m.end)<=this.toMin(m.start)) m.end=this.toHHMM(this.toMin(m.start)+30);
@@ -227,16 +255,37 @@ class Component extends DCLogic {
     this.flash(m.id?'已更新事件 ✓':'已新增事件 ✓');
   }
   deleteModal(){
+    this.pushUndo();
     const id=this.state.modal.id;
     this.setState(s=>({ events:s.events.filter(e=>e.id!==id), modal:null }));
     this.flash('已刪除事件');
   }
   flash(msg){ this.setState({ toast:msg }); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({ toast:null }), 1900); }
 
+  pushUndo(){ this._history.push({ events:[...this.state.events], todos:[...this.state.todos] }); if(this._history.length>20) this._history.shift(); }
+  undoLast(){ if(!this._history.length){ this.flash('沒有可以復原的操作'); return; } const p=this._history.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已復原 ↩'); }
+
+  requestNotifPerm(){ if(!('Notification' in window)) return; Notification.requestPermission().then(p=>{ this._notifPerm=p; if(p==='granted') this.flash('提醒通知已開啟 🔔'); }); }
+  _checkNotifications(){
+    if(this._notifPerm!=='granted') return;
+    const now=new Date(); const todayStr=this.toStr(now);
+    if(this._notifDay!==todayStr){ this._notified.clear(); this._notifDay=todayStr; }
+    const nowMin=now.getHours()*60+now.getMinutes();
+    this.state.events.forEach(ev=>{
+      if(ev.reminder<=0 || !this.occursOn(ev,todayStr)) return;
+      const fireMin=this.toMin(ev.start)-ev.reminder;
+      const key=ev.id+'_'+todayStr;
+      if(nowMin>=fireMin && nowMin<=fireMin+1 && !this._notified.has(key)){
+        this._notified.add(key);
+        try{ new Notification('📅 '+ev.title,{ body:ev.start+' · '+this.catOf(ev.cat).name.split(' ')[0], icon:'icons/icon-192.png' }); }catch(e){}
+      }
+    });
+  }
+
   toggleCat(id){ this.setState(s=>({ hidden:{ ...s.hidden, [id]:!s.hidden[id] } })); }
   toggleTodo(id){ this.setState(s=>({ todos:s.todos.map(t=>t.id===id?{...t,done:!t.done}:t) })); }
-  addTodo(){ const t=this.state.newTodo.trim(); if(!t) return; this.setState(s=>({ todos:[...s.todos,{id:'t'+Date.now(),text:t,done:false,date:''}], newTodo:'' })); }
-  delTodo(id){ this.setState(s=>({ todos:s.todos.filter(t=>t.id!==id) })); }
+  addTodo(){ this.pushUndo(); const t=this.state.newTodo.trim(); if(!t) return; this.setState(s=>({ todos:[...s.todos,{id:'t'+Date.now(),text:t,done:false,date:''}], newTodo:'' })); }
+  delTodo(id){ this.pushUndo(); this.setState(s=>({ todos:s.todos.filter(t=>t.id!==id) })); }
 
   // ---------- drag to move / resize ----------
   beginDrag(e, ev, dateStr, mode){
@@ -310,6 +359,7 @@ class Component extends DCLogic {
       this.renderMiniCal(),
       this.renderCategories(),
       this.renderTodos(),
+      this.renderThemePicker(),
     );
   }
 
@@ -390,6 +440,29 @@ class Component extends DCLogic {
     if (S.view==='day') return (d.getMonth()+1)+'月'+d.getDate()+'日 星期'+this.weekdayNames[d.getDay()];
     return '接下來 Upcoming';
   }
+  renderThemePicker(){
+    const T=this.theme, h=React.createElement, S=this.state;
+    const themes=[
+      ['pink','粉紅','#ff7aa8'],['purple','紫羅蘭','#a670e8'],['blue','天藍','#4a90d9'],
+      ['green','薄荷','#3db882'],['coral','珊瑚','#f0705a'],['dark','深色','#a78bfa'],
+    ];
+    const hasPerm=(typeof Notification!=='undefined') && Notification.permission==='granted';
+    return h('div',{ style:{padding:'10px 18px 18px',borderTop:'1px solid '+T.line} },
+      h('div',{ style:{fontSize:11.5,fontWeight:800,color:T.sub,letterSpacing:1,marginBottom:10,textTransform:'uppercase'} },'主題配色'),
+      h('div',{ style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12} },
+        themes.map(([k,name,col])=>{
+          const on=S.themePreset===k;
+          return h('button',{ key:k, title:name, onClick:()=>this.setState({themePreset:k}),
+            style:{width:26,height:26,borderRadius:'50%',border:on?'3px solid '+T.ink:'3px solid transparent',
+              background:col,cursor:'pointer',transition:'transform .15s',
+              transform:on?'scale(1.18)':'scale(1)'} });
+        })
+      ),
+      !hasPerm?h('button',{ onClick:()=>this.requestNotifPerm(),
+        style:{width:'100%',padding:'9px',borderRadius:10,border:'1.5px dashed '+T.line,background:'transparent',
+          color:T.sub,fontSize:13,fontWeight:700,cursor:'pointer'} },'🔔 開啟推播提醒'):null,
+    );
+  }
   renderHeader(){
     const T=this.theme, h=React.createElement, S=this.state;
     const tabs=[['week','週'],['day','日'],['month','月'],['agenda','清單']];
@@ -415,6 +488,8 @@ class Component extends DCLogic {
           style:{padding:'8px 16px',borderRadius:9,border:'none',cursor:'pointer',fontWeight:800,fontSize:13.5,
             background:S.view===v?T.panel:'transparent',color:S.view===v?T.primary:T.sub,
             boxShadow:S.view===v?'0 2px 6px rgba(0,0,0,.06)':'none'} },l))):null,
+      !S.isMobile&&this._history.length?h('button',{ title:'復原 (Ctrl+Z)', onClick:()=>this.undoLast(),
+        style:{padding:'11px 14px',borderRadius:12,border:'1px solid '+T.line,cursor:'pointer',fontWeight:800,fontSize:14,background:T.panel,color:T.sub} },'↩'):null,
       !S.isMobile?h('button',{ onClick:()=>this.openNew(),
         style:{padding:'11px 18px',borderRadius:12,border:'none',cursor:'pointer',fontWeight:800,fontSize:14,background:T.primary,color:'#fff',boxShadow:'0 4px 12px '+this.hex(T.primary,.4),whiteSpace:'nowrap'} },'＋ 新增'):null,
     );
@@ -590,7 +665,7 @@ class Component extends DCLogic {
         field('標題 Title', h('input',{ autoFocus:true, value:m.title, placeholder:'例如：和 Amy 喝咖啡', onChange:e=>this.updModal('title',e.target.value), style:inp })),
         field('日期 Date', h('input',{ type:'date', value:m.date, onChange:e=>this.updModal('date',e.target.value), style:inp })),
         h('div',{ style:{display:'flex',gap:12} },
-          h('div',{ style:{flex:1} },field('開始', h('input',{ type:'time', value:m.start, onChange:e=>this.updModal('start',e.target.value), style:inp }))),
+          h('div',{ style:{flex:1} },field('開始', h('input',{ type:'time', value:m.start, onChange:e=>{ const dur=Math.max(15,this.toMin(m.end)-this.toMin(m.start)); const ns=e.target.value; this.setState(s=>({modal:{...s.modal,start:ns,end:this.toHHMM(Math.min(1439,this.toMin(ns)+dur))}})); }, style:inp }))),
           h('div',{ style:{flex:1} },field('結束', h('input',{ type:'time', value:m.end, onChange:e=>this.updModal('end',e.target.value), style:inp })))),
         field('分類 Category', h('div',{ style:{display:'flex',gap:8,flexWrap:'wrap'} },
           this.state.categories.map(c=>{
