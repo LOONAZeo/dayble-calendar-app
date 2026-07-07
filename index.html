@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dayble 行事曆</title>
 <meta name="description" content="Dayble — 簡潔可愛的中英雙語行事曆，支援週/日/月/議程檢視、分類、重複與提醒。">
-<meta name="theme-color" content="#ff7aa8">
+<meta name="theme-color" content="#ff7aa8" id="meta-theme-color">
+<meta name="msapplication-navbutton-color" content="#ff7aa8" id="meta-nav-color">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,19 +23,20 @@
 <helmet>
 <style>
     * { box-sizing: border-box; }
+    :root { --bg:#faf7fb; --ink:#3f3947; --primary:#ff7aa8; --line:#efe9f2; --panel:#ffffff; --sub:#8f8899; }
     html, body { margin: 0; padding: 0; height: 100%; }
-    body { font-family: 'Nunito','Noto Sans TC',sans-serif; -webkit-font-smoothing: antialiased; color: #3f3947; background: #faf7fb; }
-    a { color: #ff7aa8; text-decoration: none; }
-    a:hover { color: #e85f92; }
+    body { font-family: 'Nunito','Noto Sans TC',sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); background: var(--bg); transition: background .25s, color .25s; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { filter: brightness(.85); }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-thumb { background: #e6dfeb; border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
-    ::-webkit-scrollbar-thumb:hover { background: #d6cdde; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--sub); background-clip: padding-box; }
     input, textarea, select, button { font-family: inherit; }
     @keyframes popIn { from { opacity: 0; transform: scale(.96) translateY(6px); } to { opacity: 1; transform: none; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideRight { from { opacity: 0; transform: translateX(-100%); } to { opacity: 1; transform: none; } }
-    .todo-row:hover { background: #f7f3f9; }
+    .todo-row:hover { background: color-mix(in srgb, var(--primary) 8%, var(--bg)); }
     .todo-row:hover button:last-child { opacity: 1 !important; }
 </style>
 </helmet>
@@ -158,6 +160,7 @@ class Component extends DCLogic {
 
     this._notifInterval = setInterval(() => this._checkNotifications(), 60000);
     this._checkNotifications();
+    this.applyThemeToDom(this.theme);
 
     // 跨分頁同步：同一瀏覽器另開分頁修改時，這裡即時更新
     this._onStorage = (e) => {
@@ -261,6 +264,24 @@ class Component extends DCLogic {
     this.flash('已刪除事件');
   }
   flash(msg){ this.setState({ toast:msg }); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({ toast:null }), 1900); }
+
+  applyThemeToDom(T){
+    const r=document.documentElement.style;
+    r.setProperty('--bg',    T.bg);
+    r.setProperty('--ink',   T.ink);
+    r.setProperty('--primary',T.primary);
+    r.setProperty('--line',  T.line);
+    r.setProperty('--panel', T.panel);
+    r.setProperty('--sub',   T.sub);
+    document.body.style.background=T.bg;
+    document.body.style.color=T.ink;
+    const mc=document.getElementById('meta-theme-color');
+    const mn=document.getElementById('meta-nav-color');
+    if(mc) mc.content=T.primary;
+    if(mn) mn.content=T.primary;
+    const ab=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if(ab) ab.content=T.bg.startsWith('#1')||T.bg.startsWith('#2')?'black':'default';
+  }
 
   pushUndo(){ this._history.push({ events:[...this.state.events], todos:[...this.state.todos] }); if(this._history.length>20) this._history.shift(); }
   undoLast(){ if(!this._history.length){ this.flash('沒有可以復原的操作'); return; } const p=this._history.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已復原 ↩'); }
@@ -452,7 +473,7 @@ class Component extends DCLogic {
       h('div',{ style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12} },
         themes.map(([k,name,col])=>{
           const on=S.themePreset===k;
-          return h('button',{ key:k, title:name, onClick:()=>this.setState({themePreset:k}),
+          return h('button',{ key:k, title:name, onClick:()=>{ this.setState({themePreset:k}); this.applyThemeToDom(this.THEMES[k]); },
             style:{width:26,height:26,borderRadius:'50%',border:on?'3px solid '+T.ink:'3px solid transparent',
               background:col,cursor:'pointer',transition:'transform .15s',
               transform:on?'scale(1.18)':'scale(1)'} });
