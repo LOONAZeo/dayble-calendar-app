@@ -1,0 +1,17 @@
+{
+  "name": "Dayble 行事曆",
+  "short_name": "Dayble",
+  "description": "簡潔可愛的中英雙語行事曆，支援週/日/月/議程檢視、分類、重複與提醒。",
+  "lang": "zh-Hant",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#faf7fb",
+  "theme_color": "#ff7aa8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

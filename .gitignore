@@ -1,0 +1,16 @@
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Node (for future Capacitor/tooling)
+node_modules/
+dist/
+.cache/
+
+# Capacitor native projects (generated) — uncomment if you don't want them versioned
+# android/
+# ios/
