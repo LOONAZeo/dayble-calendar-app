@@ -60,8 +60,8 @@
 class Component extends DCLogic {
   state = {
     view: this.props.defaultView ?? 'week',
-    cursor: '2026-07-07',
-    selected: '2026-07-07',
+    cursor: (()=>{ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })(),
+    selected: (()=>{ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })(),
     query: '',
     sidebarOpen: false,
     isMobile: (typeof window !== 'undefined' ? window.innerWidth : 1200) < 900,
@@ -101,7 +101,7 @@ class Component extends DCLogic {
   };
 
   HH = 52;
-  today = '2026-07-07';
+  today = (()=>{ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })();
   holidays = {
     '2026-01-01':'元旦','2026-02-14':'情人節','2026-02-17':'春節','2026-04-04':'兒童節',
     '2026-04-05':'清明節','2026-05-01':'勞動節','2026-06-19':'端午節','2026-09-25':'中秋節',
@@ -115,6 +115,7 @@ class Component extends DCLogic {
   get weekStartMon() { return this.props.weekStartMonday ?? true; }
 
   _history = [];
+  _redoStack = [];
   _notified = new Set();
   _notifDay = '';
   _notifPerm = (typeof Notification !== 'undefined') ? Notification.permission : 'denied';
@@ -154,6 +155,8 @@ class Component extends DCLogic {
     this._onKeydown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault(); this.undoLast();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault(); this.redoLast();
       }
     };
     document.addEventListener('keydown', this._onKeydown);
@@ -283,8 +286,9 @@ class Component extends DCLogic {
     if(ab) ab.content=T.bg.startsWith('#1')||T.bg.startsWith('#2')?'black':'default';
   }
 
-  pushUndo(){ this._history.push({ events:[...this.state.events], todos:[...this.state.todos] }); if(this._history.length>20) this._history.shift(); }
-  undoLast(){ if(!this._history.length){ this.flash('沒有可以復原的操作'); return; } const p=this._history.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已復原 ↩'); }
+  pushUndo(){ this._history.push({ events:[...this.state.events], todos:[...this.state.todos] }); if(this._history.length>20) this._history.shift(); this._redoStack=[]; }
+  undoLast(){ if(!this._history.length){ this.flash('沒有可以復原的操作'); return; } this._redoStack.push({ events:[...this.state.events], todos:[...this.state.todos] }); const p=this._history.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已復原 ↩'); }
+  redoLast(){ if(!this._redoStack.length){ this.flash('沒有可以重做的操作'); return; } this._history.push({ events:[...this.state.events], todos:[...this.state.todos] }); const p=this._redoStack.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已重做 ↪'); }
 
   requestNotifPerm(){ if(!('Notification' in window)) return; Notification.requestPermission().then(p=>{ this._notifPerm=p; if(p==='granted') this.flash('提醒通知已開啟 🔔'); }); }
   _checkNotifications(){
@@ -511,6 +515,8 @@ class Component extends DCLogic {
             boxShadow:S.view===v?'0 2px 6px rgba(0,0,0,.06)':'none'} },l))):null,
       !S.isMobile&&this._history.length?h('button',{ title:'復原 (Ctrl+Z)', onClick:()=>this.undoLast(),
         style:{padding:'11px 14px',borderRadius:12,border:'1px solid '+T.line,cursor:'pointer',fontWeight:800,fontSize:14,background:T.panel,color:T.sub} },'↩'):null,
+      !S.isMobile&&this._redoStack.length?h('button',{ title:'重做 (Ctrl+Y)', onClick:()=>this.redoLast(),
+        style:{padding:'11px 14px',borderRadius:12,border:'1px solid '+T.line,cursor:'pointer',fontWeight:800,fontSize:14,background:T.panel,color:T.sub} },'↪'):null,
       !S.isMobile?h('button',{ onClick:()=>this.openNew(),
         style:{padding:'11px 18px',borderRadius:12,border:'none',cursor:'pointer',fontWeight:800,fontSize:14,background:T.primary,color:'#fff',boxShadow:'0 4px 12px '+this.hex(T.primary,.4),whiteSpace:'nowrap'} },'＋ 新增'):null,
     );
