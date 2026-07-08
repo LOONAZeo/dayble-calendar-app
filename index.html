@@ -40,7 +40,7 @@
     .todo-row:hover button:last-child { opacity: 1 !important; }
 </style>
 </helmet>
-<div style="height:100vh;width:100%;display:flex;overflow:hidden;background:#faf7fb;position:relative">
+<div style="height:100vh;width:100%;display:flex;overflow:hidden;background:var(--bg,#faf7fb);color:var(--ink,#3f3947);position:relative;transition:background .25s,color .25s">
   {{ sidebar }}
   {{ backdrop }}
   <main style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
