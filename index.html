@@ -376,7 +376,7 @@ class Component extends DCLogic {
       : {width:300,flexShrink:0};
     return h('aside',{ style:{ ...wrap, background:T.panel, borderRight:'1px solid '+T.line, display:'flex',flexDirection:'column',overflowY:'auto' } },
       // brand
-      h('div',{ style:{padding:'22px 22px 14px',display:'flex',alignItems:'center',gap:11} },
+      h('div',{ style:{padding:'14px 18px 10px',display:'flex',alignItems:'center',gap:10} },
         h('div',{ style:{width:38,height:38,borderRadius:12,background:'linear-gradient(135deg,'+T.primary+','+this.catOf('study').dot+')',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,boxShadow:'0 6px 14px '+this.hex(T.primary,.3)} },'🗓️'),
         h('div',{},
           h('div',{ style:{fontFamily:"'Fredoka',sans-serif",fontWeight:600,fontSize:19,color:T.ink,lineHeight:1} },'Dayble'),
@@ -395,7 +395,7 @@ class Component extends DCLogic {
     const dowLabels=this.weekStartMon?['一','二','三','四','五','六','日']:['日','一','二','三','四','五','六'];
     const weeks=this.monthMatrix(this.toStr(new Date(d.getFullYear(),d.getMonth(),15)));
     const curM=d.getMonth();
-    return h('div',{ style:{padding:'6px 18px 16px'} },
+    return h('div',{ style:{padding:'4px 18px 10px'} },
       h('div',{ style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8} },
         h('span',{ style:{fontWeight:800,fontSize:14.5,color:T.ink} },label),
         h('div',{ style:{display:'flex',gap:4} },
@@ -420,13 +420,13 @@ class Component extends DCLogic {
 
   renderCategories(){
     const T=this.theme, h=React.createElement;
-    return h('div',{ style:{padding:'4px 18px 16px'} },
-      h('div',{ style:{fontSize:11.5,fontWeight:800,color:T.sub,letterSpacing:.6,textTransform:'uppercase',marginBottom:10,paddingLeft:4} },'分類 Categories'),
-      h('div',{ style:{display:'flex',flexDirection:'column',gap:3} },
+    return h('div',{ style:{padding:'2px 18px 10px'} },
+      h('div',{ style:{fontSize:11,fontWeight:800,color:T.sub,letterSpacing:.6,textTransform:'uppercase',marginBottom:6,paddingLeft:4} },'分類 Categories'),
+      h('div',{ style:{display:'flex',flexDirection:'column',gap:1} },
         this.state.categories.map(c=>{
           const on=!this.state.hidden[c.id];
           return h('button',{ key:c.id, onClick:()=>this.toggleCat(c.id),
-            style:{display:'flex',alignItems:'center',gap:11,padding:'8px 10px',borderRadius:11,border:'none',cursor:'pointer',background:'transparent',width:'100%',textAlign:'left',opacity:on?1:.42} },
+            style:{display:'flex',alignItems:'center',gap:9,padding:'5px 8px',borderRadius:9,border:'none',cursor:'pointer',background:'transparent',width:'100%',textAlign:'left',opacity:on?1:.42} },
             h('span',{ style:{width:15,height:15,borderRadius:5,background:on?c.dot:'transparent',border:'2.5px solid '+c.dot,flexShrink:0,transition:'.15s'} }),
             h('span',{ style:{fontSize:14,fontWeight:700,color:T.ink} },c.name));
         })));
@@ -435,13 +435,13 @@ class Component extends DCLogic {
   renderTodos(){
     const T=this.theme, h=React.createElement, S=this.state;
     const left=S.todos.filter(t=>!t.done).length;
-    return h('div',{ style:{padding:'4px 18px 22px',marginTop:'auto'} },
-      h('div',{ style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,paddingLeft:4} },
+    return h('div',{ style:{padding:'2px 18px 12px'} },
+      h('div',{ style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6,paddingLeft:4} },
         h('span',{ style:{fontSize:11.5,fontWeight:800,color:T.sub,letterSpacing:.6,textTransform:'uppercase'} },'備忘錄 To-do'),
         h('span',{ style:{fontSize:11,fontWeight:800,color:T.primary,background:T.primarySoft,padding:'2px 9px',borderRadius:20} },left+' 待辦')),
       h('div',{ style:{display:'flex',flexDirection:'column',gap:2,marginBottom:8} },
         S.todos.map(t=>h('div',{ key:t.id, className:'todo-row',
-          style:{display:'flex',alignItems:'flex-start',gap:10,padding:'7px 8px',borderRadius:10,position:'relative'} },
+          style:{display:'flex',alignItems:'flex-start',gap:8,padding:'5px 6px',borderRadius:8,position:'relative'} },
           h('button',{ onClick:()=>this.toggleTodo(t.id),
             style:{width:20,height:20,marginTop:1,borderRadius:7,border:'2.5px solid '+(t.done?T.primary:'#d9d0e0'),background:t.done?T.primary:'#fff',cursor:'pointer',flexShrink:0,color:'#fff',fontSize:12,lineHeight:1,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'} }, t.done?'✓':''),
           h('div',{ style:{flex:1,minWidth:0} },
@@ -473,23 +473,23 @@ class Component extends DCLogic {
       { label:'暗色', keys:['dark','night'] },
     ];
     const hasPerm=(typeof Notification!=='undefined') && Notification.permission==='granted';
-    return h('div',{ style:{padding:'10px 18px 18px',borderTop:'1px solid '+T.line} },
-      h('div',{ style:{fontSize:11.5,fontWeight:800,color:T.sub,letterSpacing:1,marginBottom:10,textTransform:'uppercase'} },'🎨 風格主題'),
+    return h('div',{ style:{padding:'8px 18px 14px',borderTop:'1px solid '+T.line} },
+      h('div',{ style:{fontSize:11,fontWeight:800,color:T.sub,letterSpacing:1,marginBottom:8,textTransform:'uppercase'} },'🎨 風格主題'),
       groups.map(g=>
-        h('div',{ key:g.label, style:{marginBottom:8} },
-          h('div',{ style:{fontSize:10.5,color:T.sub,fontWeight:700,marginBottom:5,opacity:.7} },g.label),
-          h('div',{ style:{display:'flex',gap:6,flexWrap:'wrap'} },
+        h('div',{ key:g.label, style:{marginBottom:6} },
+          h('div',{ style:{fontSize:10,color:T.sub,fontWeight:700,marginBottom:4,opacity:.7} },g.label),
+          h('div',{ style:{display:'flex',gap:5,flexWrap:'wrap'} },
             g.keys.map(k=>{
               const th=this.THEMES[k]; const on=S.themePreset===k;
               return h('button',{ key:k,
                 onClick:()=>{ this.setState({themePreset:k}); this.applyThemeToDom(th); },
-                style:{display:'flex',alignItems:'center',gap:5,padding:'5px 9px',borderRadius:20,cursor:'pointer',
+                style:{display:'flex',alignItems:'center',gap:4,padding:'3px 8px',borderRadius:20,cursor:'pointer',
                   border:'2px solid '+(on?th.primary:'transparent'),
                   background:on?th.primarySoft:T.bg,
                   color:on?th.primary:T.sub,
-                  fontWeight:on?800:600,fontSize:12,transition:'all .15s',
-                  boxShadow:on?'0 2px 8px '+th.primary+'44':'none'} },
-                h('span',{ style:{width:10,height:10,borderRadius:'50%',background:th.primary,flexShrink:0} }),
+                  fontWeight:on?800:600,fontSize:11.5,transition:'all .15s',
+                  boxShadow:on?'0 2px 6px '+th.primary+'44':'none'} },
+                h('span',{ style:{width:8,height:8,borderRadius:'50%',background:th.primary,flexShrink:0} }),
                 th.label);
             })
           )
