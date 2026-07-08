@@ -15,7 +15,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@400;700&display=swap">
 <script src="runtime.js"></script>
 </head>
 <body>
@@ -104,12 +104,23 @@ class Component extends DCLogic {
   _notifPerm = (typeof Notification !== 'undefined') ? Notification.permission : 'denied';
 
   THEMES = {
-    pink:   { primary:'#ff7aa8', primarySoft:'#ffe4ef', bg:'#faf7fb', panel:'#ffffff', ink:'#3f3947', sub:'#8f8899', line:'#efe9f2' },
-    purple: { primary:'#a670e8', primarySoft:'#f0e8ff', bg:'#f9f7ff', panel:'#ffffff', ink:'#3b2560', sub:'#8a78b0', line:'#e8e0f8' },
-    blue:   { primary:'#4a90d9', primarySoft:'#dceeff', bg:'#f5f8ff', panel:'#ffffff', ink:'#1a2a45', sub:'#5a7898', line:'#d8e8f8' },
-    green:  { primary:'#3db882', primarySoft:'#d5f5e8', bg:'#f4faf8', panel:'#ffffff', ink:'#1a3d2e', sub:'#5a8070', line:'#c8ead8' },
-    coral:  { primary:'#f0705a', primarySoft:'#ffe8e4', bg:'#fffaf9', panel:'#ffffff', ink:'#42201a', sub:'#9a7068', line:'#f0ddd8' },
-    dark:   { primary:'#a78bfa', primarySoft:'#312e52', bg:'#1a1825', panel:'#24203a', ink:'#f0ecff', sub:'#8b85a8', line:'#3a3558' },
+    // ── 基本色系 ──────────────────────────────────────────────────
+    pink:    { label:'粉紅',  primary:'#ff7aa8', primarySoft:'#ffe4ef', bg:'#faf7fb', panel:'#ffffff', ink:'#3f3947', sub:'#8f8899', line:'#efe9f2' },
+    purple:  { label:'紫羅蘭',primary:'#a670e8', primarySoft:'#f0e8ff', bg:'#f9f7ff', panel:'#ffffff', ink:'#3b2560', sub:'#8a78b0', line:'#e8e0f8' },
+    blue:    { label:'天藍',  primary:'#4a90d9', primarySoft:'#dceeff', bg:'#f5f8ff', panel:'#ffffff', ink:'#1a2a45', sub:'#5a7898', line:'#d8e8f8' },
+    green:   { label:'薄荷',  primary:'#3db882', primarySoft:'#d5f5e8', bg:'#f4faf8', panel:'#ffffff', ink:'#1a3d2e', sub:'#5a8070', line:'#c8ead8' },
+    coral:   { label:'珊瑚',  primary:'#f0705a', primarySoft:'#ffe8e4', bg:'#fffaf9', panel:'#ffffff', ink:'#42201a', sub:'#9a7068', line:'#f0ddd8' },
+    // ── 自然風格 ──────────────────────────────────────────────────
+    wenjing: { label:'文青',  primary:'#b8895a', primarySoft:'#f5e8d8', bg:'#f8f4ee', panel:'#fffdf8', ink:'#3a2812', sub:'#9a826a', line:'#e8ddd0',
+                font:"'Noto Serif TC','Georgia',serif" },
+    beach:   { label:'海邊',  primary:'#1aa8c8', primarySoft:'#cdf0f8', bg:'#f0faff', panel:'#ffffff', ink:'#0e3d50', sub:'#5090a8', line:'#b8e0f0' },
+    forest:  { label:'山林',  primary:'#4a7c5a', primarySoft:'#d0e8d4', bg:'#f2f6f2', panel:'#ffffff', ink:'#1a3020', sub:'#6a8a70', line:'#c4dcc8' },
+    animal:  { label:'動物',  primary:'#e07838', primarySoft:'#fde8d0', bg:'#fff8f2', panel:'#ffffff', ink:'#3a1808', sub:'#986040', line:'#f5d8b0',
+                font:"'Fredoka',sans-serif" },
+    sakura:  { label:'櫻花',  primary:'#d9688a', primarySoft:'#fce0e8', bg:'#fff5f8', panel:'#ffffff', ink:'#4a1828', sub:'#a06078', line:'#f5c8d8' },
+    // ── 暗色系 ────────────────────────────────────────────────────
+    dark:    { label:'深色',  primary:'#a78bfa', primarySoft:'#312e52', bg:'#1a1825', panel:'#24203a', ink:'#f0ecff', sub:'#8b85a8', line:'#3a3558' },
+    night:   { label:'暗夜',  primary:'#6a5acd', primarySoft:'#20205a', bg:'#0d0d1a', panel:'#16162a', ink:'#e0d8ff', sub:'#9088c0', line:'#28284a' },
   };
 
   STORE_KEY = 'dayble_v1';
@@ -264,6 +275,9 @@ class Component extends DCLogic {
     // 直接設定 app 外層 div（CSS 變數無法跨 DCLogic 渲染層）
     const appRoot=document.getElementById('app-root');
     if(appRoot){ appRoot.style.background=T.bg; appRoot.style.color=T.ink; }
+    const baseFont="'Nunito','Noto Sans TC',sans-serif";
+    document.body.style.fontFamily=T.font||baseFont;
+    if(appRoot) appRoot.style.fontFamily=T.font||baseFont;
     const mc=document.getElementById('meta-theme-color');
     const mn=document.getElementById('meta-nav-color');
     if(mc) mc.content=T.primary;
@@ -453,24 +467,36 @@ class Component extends DCLogic {
   }
   renderThemePicker(){
     const T=this.theme, h=React.createElement, S=this.state;
-    const themes=[
-      ['pink','粉紅','#ff7aa8'],['purple','紫羅蘭','#a670e8'],['blue','天藍','#4a90d9'],
-      ['green','薄荷','#3db882'],['coral','珊瑚','#f0705a'],['dark','深色','#a78bfa'],
+    const groups=[
+      { label:'色系', keys:['pink','purple','blue','green','coral'] },
+      { label:'自然', keys:['wenjing','beach','forest','animal','sakura'] },
+      { label:'暗色', keys:['dark','night'] },
     ];
     const hasPerm=(typeof Notification!=='undefined') && Notification.permission==='granted';
     return h('div',{ style:{padding:'10px 18px 18px',borderTop:'1px solid '+T.line} },
-      h('div',{ style:{fontSize:11.5,fontWeight:800,color:T.sub,letterSpacing:1,marginBottom:10,textTransform:'uppercase'} },'主題配色'),
-      h('div',{ style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12} },
-        themes.map(([k,name,col])=>{
-          const on=S.themePreset===k;
-          return h('button',{ key:k, title:name, onClick:()=>{ this.setState({themePreset:k}); this.applyThemeToDom(this.THEMES[k]); },
-            style:{width:26,height:26,borderRadius:'50%',border:on?'3px solid '+T.ink:'3px solid transparent',
-              background:col,cursor:'pointer',transition:'transform .15s',
-              transform:on?'scale(1.18)':'scale(1)'} });
-        })
+      h('div',{ style:{fontSize:11.5,fontWeight:800,color:T.sub,letterSpacing:1,marginBottom:10,textTransform:'uppercase'} },'🎨 風格主題'),
+      groups.map(g=>
+        h('div',{ key:g.label, style:{marginBottom:8} },
+          h('div',{ style:{fontSize:10.5,color:T.sub,fontWeight:700,marginBottom:5,opacity:.7} },g.label),
+          h('div',{ style:{display:'flex',gap:6,flexWrap:'wrap'} },
+            g.keys.map(k=>{
+              const th=this.THEMES[k]; const on=S.themePreset===k;
+              return h('button',{ key:k,
+                onClick:()=>{ this.setState({themePreset:k}); this.applyThemeToDom(th); },
+                style:{display:'flex',alignItems:'center',gap:5,padding:'5px 9px',borderRadius:20,cursor:'pointer',
+                  border:'2px solid '+(on?th.primary:'transparent'),
+                  background:on?th.primarySoft:T.bg,
+                  color:on?th.primary:T.sub,
+                  fontWeight:on?800:600,fontSize:12,transition:'all .15s',
+                  boxShadow:on?'0 2px 8px '+th.primary+'44':'none'} },
+                h('span',{ style:{width:10,height:10,borderRadius:'50%',background:th.primary,flexShrink:0} }),
+                th.label);
+            })
+          )
+        )
       ),
       !hasPerm?h('button',{ onClick:()=>this.requestNotifPerm(),
-        style:{width:'100%',padding:'9px',borderRadius:10,border:'1.5px dashed '+T.line,background:'transparent',
+        style:{width:'100%',marginTop:8,padding:'9px',borderRadius:10,border:'1.5px dashed '+T.line,background:'transparent',
           color:T.sub,fontSize:13,fontWeight:700,cursor:'pointer'} },'🔔 開啟推播提醒'):null,
     );
   }
