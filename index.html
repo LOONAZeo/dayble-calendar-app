@@ -40,7 +40,7 @@
     .todo-row:hover button:last-child { opacity: 1 !important; }
 </style>
 </helmet>
-<div style="height:100vh;width:100%;display:flex;overflow:hidden;background:var(--bg,#faf7fb);color:var(--ink,#3f3947);position:relative;transition:background .25s,color .25s">
+<div id="app-root" style="height:100vh;width:100%;display:flex;overflow:hidden;background:#faf7fb;position:relative;transition:background .25s">
   {{ sidebar }}
   {{ backdrop }}
   <main style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
@@ -253,14 +253,17 @@ class Component extends DCLogic {
 
   applyThemeToDom(T){
     const r=document.documentElement.style;
-    r.setProperty('--bg',    T.bg);
-    r.setProperty('--ink',   T.ink);
+    r.setProperty('--bg',     T.bg);
+    r.setProperty('--ink',    T.ink);
     r.setProperty('--primary',T.primary);
-    r.setProperty('--line',  T.line);
-    r.setProperty('--panel', T.panel);
-    r.setProperty('--sub',   T.sub);
+    r.setProperty('--line',   T.line);
+    r.setProperty('--panel',  T.panel);
+    r.setProperty('--sub',    T.sub);
     document.body.style.background=T.bg;
     document.body.style.color=T.ink;
+    // 直接設定 app 外層 div（CSS 變數無法跨 DCLogic 渲染層）
+    const appRoot=document.getElementById('app-root');
+    if(appRoot){ appRoot.style.background=T.bg; appRoot.style.color=T.ink; }
     const mc=document.getElementById('meta-theme-color');
     const mn=document.getElementById('meta-nav-color');
     if(mc) mc.content=T.primary;
