@@ -501,7 +501,7 @@ class Component extends DCLogic {
   }
   renderCatFilter(){
     const T=this.theme, h=React.createElement, S=this.state;
-    return h('div',{ style:{flexShrink:0,padding:S.isMobile?'6px 14px':'5px 26px 7px',borderBottom:'1px solid '+T.line,background:T.panel,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'} },
+    return h('div',{ style:{padding:S.isMobile?'5px 14px 8px':'4px 26px 8px',borderTop:'1px solid '+T.line,background:T.panel,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'} },
       S.categories.map(c=>{
         const on=!S.hidden[c.id];
         return h('button',{ key:c.id, onClick:()=>this.toggleCat(c.id),
@@ -516,37 +516,34 @@ class Component extends DCLogic {
   renderHeader(){
     const T=this.theme, h=React.createElement, S=this.state;
     const tabs=[['week','週'],['day','日'],['month','月'],['agenda','清單']];
-    return h('div',{ style:{flexShrink:0,display:'flex',flexDirection:'column'} },
-    h('header',{ style:{padding:S.isMobile?'12px 16px':'16px 26px',borderBottom:'1px solid '+T.line,background:T.panel,
-      display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'} },
-      S.isMobile?h('button',{ onClick:()=>this.setState({sidebarOpen:true}), style:{border:'none',background:T.bg,width:38,height:38,borderRadius:11,fontSize:17,cursor:'pointer',flexShrink:0} },'☰'):null,
-      // nav
-      h('div',{ style:{display:'flex',alignItems:'center',gap:6} },
-        h('button',{ onClick:()=>this.goToday(), style:{padding:'8px 15px',borderRadius:11,border:'1px solid '+T.line,background:T.panel,color:T.ink,fontWeight:800,fontSize:13.5,cursor:'pointer'} },'今天'),
-        h('button',{ onClick:()=>this.go(-1), style:this.navArrow(T) },'‹'),
-        h('button',{ onClick:()=>this.go(1), style:this.navArrow(T) },'›')),
-      h('h1',{ style:{fontFamily:"'Fredoka',sans-serif",fontWeight:600,fontSize:S.isMobile?19:24,color:T.ink,margin:0,whiteSpace:'nowrap'} },this.periodLabel()),
-      h('div',{ style:{flex:1} }),
-      // search
-      !S.isMobile?h('div',{ style:{display:'flex',alignItems:'center',gap:8,background:T.bg,borderRadius:12,padding:'0 14px',minWidth:200} },
-        h('span',{ style:{color:T.sub,fontSize:15} },'🔍'),
-        h('input',{ value:S.query, placeholder:'搜尋事件…', onChange:e=>this.setState({query:e.target.value}),
-          style:{border:'none',background:'transparent',outline:'none',padding:'10px 0',fontSize:14,color:T.ink,width:150} }),
-        S.query?h('button',{ onClick:()=>this.setState({query:''}), style:{border:'none',background:'transparent',color:T.sub,cursor:'pointer',fontSize:16} },'×'):null):null,
-      // view tabs
-      !S.isMobile?h('div',{ style:{display:'flex',gap:3,background:T.bg,borderRadius:12,padding:4} },
-        tabs.map(([v,l])=>h('button',{ key:v, onClick:()=>this.setView(v),
-          style:{padding:'8px 16px',borderRadius:9,border:'none',cursor:'pointer',fontWeight:800,fontSize:13.5,
-            background:S.view===v?T.panel:'transparent',color:S.view===v?T.primary:T.sub,
-            boxShadow:S.view===v?'0 2px 6px rgba(0,0,0,.06)':'none'} },l))):null,
-      !S.isMobile&&this._history.length?h('button',{ title:'復原 (Ctrl+Z)', onClick:()=>this.undoLast(),
-        style:{padding:'11px 14px',borderRadius:12,border:'1px solid '+T.line,cursor:'pointer',fontWeight:800,fontSize:14,background:T.panel,color:T.sub} },'↩'):null,
-      !S.isMobile&&this._redoStack.length?h('button',{ title:'重做 (Ctrl+Y)', onClick:()=>this.redoLast(),
-        style:{padding:'11px 14px',borderRadius:12,border:'1px solid '+T.line,cursor:'pointer',fontWeight:800,fontSize:14,background:T.panel,color:T.sub} },'↪'):null,
-      !S.isMobile?h('button',{ onClick:()=>this.openNew(),
-        style:{padding:'11px 18px',borderRadius:12,border:'none',cursor:'pointer',fontWeight:800,fontSize:14,background:T.primary,color:'#fff',boxShadow:'0 4px 12px '+this.hex(T.primary,.4),whiteSpace:'nowrap'} },'＋ 新增'):null,
-    ),
-    this.renderCatFilter(),
+    const btnStyle=(vis)=>({padding:'11px 14px',borderRadius:12,border:'1px solid '+T.line,cursor:'pointer',fontWeight:800,fontSize:14,background:T.panel,color:T.sub,visibility:vis?'visible':'hidden'});
+    return h('header',{ style:{flexShrink:0,background:T.panel,borderBottom:'1px solid '+T.line,display:'flex',flexDirection:'column'} },
+      // ── 導覽列 ──
+      h('div',{ style:{padding:S.isMobile?'12px 16px':'16px 26px',display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'} },
+        S.isMobile?h('button',{ onClick:()=>this.setState({sidebarOpen:true}), style:{border:'none',background:T.bg,width:38,height:38,borderRadius:11,fontSize:17,cursor:'pointer',flexShrink:0} },'☰'):null,
+        h('div',{ style:{display:'flex',alignItems:'center',gap:6} },
+          h('button',{ onClick:()=>this.goToday(), style:{padding:'8px 15px',borderRadius:11,border:'1px solid '+T.line,background:T.panel,color:T.ink,fontWeight:800,fontSize:13.5,cursor:'pointer'} },'今天'),
+          h('button',{ onClick:()=>this.go(-1), style:this.navArrow(T) },'‹'),
+          h('button',{ onClick:()=>this.go(1), style:this.navArrow(T) },'›')),
+        h('h1',{ style:{fontFamily:"'Fredoka',sans-serif",fontWeight:600,fontSize:S.isMobile?19:24,color:T.ink,margin:0,whiteSpace:'nowrap'} },this.periodLabel()),
+        h('div',{ style:{flex:1} }),
+        !S.isMobile?h('div',{ style:{display:'flex',alignItems:'center',gap:8,background:T.bg,borderRadius:12,padding:'0 14px',minWidth:200} },
+          h('span',{ style:{color:T.sub,fontSize:15} },'🔍'),
+          h('input',{ value:S.query, placeholder:'搜尋事件…', onChange:e=>this.setState({query:e.target.value}),
+            style:{border:'none',background:'transparent',outline:'none',padding:'10px 0',fontSize:14,color:T.ink,width:150} }),
+          S.query?h('button',{ onClick:()=>this.setState({query:''}), style:{border:'none',background:'transparent',color:T.sub,cursor:'pointer',fontSize:16} },'×'):null):null,
+        !S.isMobile?h('div',{ style:{display:'flex',gap:3,background:T.bg,borderRadius:12,padding:4} },
+          tabs.map(([v,l])=>h('button',{ key:v, onClick:()=>this.setView(v),
+            style:{padding:'8px 16px',borderRadius:9,border:'none',cursor:'pointer',fontWeight:800,fontSize:13.5,
+              background:S.view===v?T.panel:'transparent',color:S.view===v?T.primary:T.sub,
+              boxShadow:S.view===v?'0 2px 6px rgba(0,0,0,.06)':'none'} },l))):null,
+        !S.isMobile?h('button',{ title:'復原 (Ctrl+Z)', onClick:()=>this.undoLast(), style:btnStyle(this._history.length) },'↩'):null,
+        !S.isMobile?h('button',{ title:'重做 (Ctrl+Y)', onClick:()=>this.redoLast(), style:btnStyle(this._redoStack.length) },'↪'):null,
+        !S.isMobile?h('button',{ onClick:()=>this.openNew(),
+          style:{padding:'11px 18px',borderRadius:12,border:'none',cursor:'pointer',fontWeight:800,fontSize:14,background:T.primary,color:'#fff',boxShadow:'0 4px 12px '+this.hex(T.primary,.4),whiteSpace:'nowrap'} },'＋ 新增'):null,
+      ),
+      // ── 分類篩選列 ──
+      this.renderCatFilter(),
     );
   }
   navArrow(T){ return {width:38,height:38,borderRadius:11,border:'1px solid '+T.line,background:T.panel,color:T.ink,fontSize:20,cursor:'pointer',lineHeight:1,fontWeight:700}; }
