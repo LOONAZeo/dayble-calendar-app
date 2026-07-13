@@ -397,6 +397,39 @@ class Component extends DCLogic {
     }).catch(()=>{});
   }
 
+  // ---------- 資料備份 / 還原 ----------
+  exportData(){
+    const data={ _app:'dayble', _ver:1, exportedAt:new Date().toISOString(),
+      events:this.state.events, todos:this.state.todos, hidden:this.state.hidden, themePreset:this.state.themePreset };
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='dayble-備份-'+this.today+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.flash('已匯出備份檔 💾');
+  }
+  importData(file){
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const d=JSON.parse(reader.result);
+        if(!d || (!Array.isArray(d.events) && !Array.isArray(d.todos))) throw new Error('格式錯誤');
+        if(!confirm('匯入將覆蓋目前的行程與待辦，確定要繼續嗎？')) return;
+        this.pushUndo();
+        const patch={};
+        if(Array.isArray(d.events)) patch.events=d.events;
+        if(Array.isArray(d.todos)) patch.todos=d.todos;
+        if(d.hidden && typeof d.hidden==='object') patch.hidden=d.hidden;
+        if(d.themePreset && this.THEMES[d.themePreset]){ patch.themePreset=d.themePreset; this.applyThemeToDom(this.THEMES[d.themePreset]); }
+        this.setState(patch);
+        this.flash('已還原備份 ✅');
+      }catch(e){ this.flash('匯入失敗：檔案格式不正確'); }
+    };
+    reader.readAsText(file);
+  }
+
   toggleCat(id){ this.setState(s=>({ hidden:{ ...s.hidden, [id]:!s.hidden[id] } })); }
   toggleTodo(id){ this.setState(s=>({ todos:s.todos.map(t=>t.id===id?{...t,done:!t.done}:t) })); }
   addTodo(){ this.pushUndo(); const t=this.state.newTodo.trim(); if(!t) return; this.setState(s=>({ todos:[...s.todos,{id:'t'+Date.now(),text:t,done:false,date:''}], newTodo:'' })); }
@@ -636,6 +669,15 @@ class Component extends DCLogic {
       !hasPerm?h('button',{ onClick:()=>this.requestNotifPerm(),
         style:{width:'100%',marginTop:8,padding:'9px',borderRadius:10,border:'1.5px dashed '+T.line,background:'transparent',
           color:T.sub,fontSize:13,fontWeight:700,cursor:'pointer'} },'🔔 開啟推播提醒'):null,
+      // 資料備份 / 還原
+      h('div',{ style:{display:'flex',gap:8,marginTop:10} },
+        h('button',{ onClick:()=>this.exportData(),
+          style:{flex:1,padding:'9px',borderRadius:10,border:'1px solid '+T.line,background:T.bg,color:T.ink,fontSize:12.5,fontWeight:700,cursor:'pointer'} },'💾 匯出備份'),
+        h('button',{ onClick:()=>this._importInput&&this._importInput.click(),
+          style:{flex:1,padding:'9px',borderRadius:10,border:'1px solid '+T.line,background:T.bg,color:T.ink,fontSize:12.5,fontWeight:700,cursor:'pointer'} },'📥 匯入還原')),
+      h('input',{ type:'file', accept:'application/json,.json', ref:(el)=>{ this._importInput=el; },
+        onChange:(e)=>{ this.importData(e.target.files[0]); e.target.value=''; },
+        style:{display:'none'} }),
     );
   }
   renderCatFilter(){
