@@ -1,6 +1,6 @@
 /* Dayble service worker — offline-first cache.
    Bump CACHE_VERSION whenever index.html / runtime.js change so clients update. */
-const CACHE_VERSION = 'dayble-v3';
+const CACHE_VERSION = 'dayble-v4';
 const CORE_ASSETS = [
   './',
   './index.html',

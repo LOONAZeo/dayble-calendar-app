@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>Dayble 行事曆</title>
 <meta name="description" content="Dayble — 簡潔可愛的中英雙語行事曆，支援週/日/月/議程檢視、分類、重複與提醒。">
 <meta name="theme-color" content="#faf7fb" id="meta-theme-color">
@@ -44,7 +45,7 @@
 <style>
     * { box-sizing: border-box; }
     :root { --bg:#faf7fb; --ink:#3f3947; --primary:#ff7aa8; --line:#efe9f2; --panel:#ffffff; --sub:#8f8899; }
-    html, body { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); }
     body { font-family: 'Nunito','Noto Sans TC',sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); background: var(--bg); }
     html.ready body, html.ready #app-root { transition: background .25s, color .25s; }
     a { color: var(--primary); text-decoration: none; }
