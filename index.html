@@ -16,6 +16,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@400;700&display=swap">
+<script>
+(function(){try{
+  var d=JSON.parse(localStorage.getItem('dayble_v1')||'{}');
+  var bg={pink:'#faf7fb',purple:'#f9f7ff',blue:'#f5f8ff',green:'#f4faf8',coral:'#fffaf9',
+    wenjing:'#f8f4ee',beach:'#f0faff',forest:'#f2f6f2',animal:'#fff8f2',sakura:'#fff5f8',
+    dark:'#1a1825',night:'#0d0d1a'};
+  var ink={pink:'#3f3947',purple:'#3b2560',blue:'#1a2a45',green:'#1a3d2e',coral:'#42201a',
+    wenjing:'#3a2812',beach:'#0e3d50',forest:'#1a3020',animal:'#3a1808',sakura:'#4a1828',
+    dark:'#f0ecff',night:'#e0d8ff'};
+  var k=d.themePreset&&bg[d.themePreset]?d.themePreset:'pink';
+  var s=document.documentElement.style;
+  s.setProperty('--bg',bg[k]); s.setProperty('--ink',ink[k]);
+  s.background=bg[k]; document.documentElement.style.background=bg[k];
+}catch(e){}}());
+</script>
 <script src="runtime.js"></script>
 </head>
 <body>
@@ -80,7 +95,7 @@ class Component extends DCLogic {
     todos: [
     ],
     newTodo: '',
-    themePreset: 'pink',
+    themePreset: (()=>{ try{ const d=JSON.parse(localStorage.getItem('dayble_v1')||'{}'); return d.themePreset||'pink'; }catch(e){ return 'pink'; } })(),
   };
 
   HH = 52;
