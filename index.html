@@ -183,6 +183,7 @@ class Component extends DCLogic {
 
     this._notifInterval = setInterval(() => this._checkNotifications(), 60000);
     this._checkNotifications();
+    this._syncScheduledNotifs();
     this.applyThemeToDom(this.theme);
 
     // 跨分頁同步：同一瀏覽器另開分頁修改時，這裡即時更新
@@ -206,6 +207,7 @@ class Component extends DCLogic {
     try {
       localStorage.setItem(this.STORE_KEY, JSON.stringify({ events: this.state.events, todos: this.state.todos, hidden: this.state.hidden, themePreset: this.state.themePreset }));
     } catch (e) {}
+    this._syncScheduledNotifs();
   }
 
   // ---------- date helpers ----------
@@ -320,7 +322,7 @@ class Component extends DCLogic {
     if(!('Notification' in window)){ this.flash('此裝置不支援通知，請改用瀏覽器開啟'); return; }
     Notification.requestPermission().then(p=>{
       this._notifPerm=p; this.forceUpdate();
-      if(p==='granted'){ this.flash('提醒通知已開啟 🔔'); this._notify('🔔 Dayble',{ body:'通知已開啟，到時間會提醒你' }); }
+      if(p==='granted'){ this.flash('提醒通知已開啟 🔔'); this._notify('🔔 Dayble',{ body:'通知已開啟，到時間會提醒你' }); this._notifSig=null; this._syncScheduledNotifs(); }
       else this.flash('通知被拒絕，請到瀏覽器設定開啟');
     });
   }
@@ -348,6 +350,43 @@ class Component extends DCLogic {
         this._notify('📅 '+ev.title,{ body:ev.start+' · '+this.catOf(ev.cat).name.split(' ')[0], tag:key });
       }
     });
+  }
+  // 背景排程：即使 app 關閉也能準時提醒（Android/Chrome 支援 TimestampTrigger）
+  // iOS / 不支援的瀏覽器會靜默略過，改由開啟時的 _checkNotifications 兜底
+  _canSchedule(){ return 'TimestampTrigger' in window && 'serviceWorker' in navigator; }
+  _syncScheduledNotifs(){
+    if(this._notifPerm!=='granted' || !this._canSchedule()) return;
+    // 用 events 簽章避免每次 render 都重排
+    const sig=this.state.events.map(e=>e.id+'|'+e.date+'|'+e.start+'|'+e.reminder+'|'+e.repeat+'|'+e.title).join(',');
+    if(sig===this._notifSig) return;
+    this._notifSig=sig;
+    navigator.serviceWorker.ready.then(reg=>{
+      if(!reg.showNotification) return;
+      // 先清掉先前排定的（tag 前綴 sch-）
+      reg.getNotifications({ includeTriggered:true }).then(list=>{
+        list.forEach(n=>{ if(n.tag && n.tag.indexOf('sch-')===0) n.close(); });
+        const now=Date.now();
+        // 未來 14 天內、有提醒、時間還沒過的每一場都排程
+        for(let i=0;i<14;i++){
+          const ds=this.addDays(this.today,i);
+          this.state.events.forEach(ev=>{
+            if(ev.reminder<=0 || !this.occursOn(ev,ds)) return;
+            const [hh,mm]=ev.start.split(':').map(Number);
+            const dt=this.parse(ds); dt.setHours(hh,mm,0,0);
+            const fire=dt.getTime()-ev.reminder*60000;
+            if(fire<=now) return;
+            try{
+              reg.showNotification('📅 '+ev.title,{
+                body:ev.start+' · '+this.catOf(ev.cat).name.split(' ')[0],
+                icon:'icons/icon-192.png', badge:'icons/icon-192.png',
+                tag:'sch-'+ev.id+'-'+ds,
+                showTrigger:new TimestampTrigger(fire),
+              });
+            }catch(e){}
+          });
+        }
+      }).catch(()=>{});
+    }).catch(()=>{});
   }
 
   toggleCat(id){ this.setState(s=>({ hidden:{ ...s.hidden, [id]:!s.hidden[id] } })); }
