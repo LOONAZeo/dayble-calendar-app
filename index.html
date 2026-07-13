@@ -147,10 +147,21 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
 
     this._onKeydown = (e) => {
+      const isInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault(); this.undoLast();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
         e.preventDefault(); this.redoLast();
+      } else if (!isInput && (e.ctrlKey || e.metaKey) && e.key === 'c' && this.state.modal) {
+        this._clipEvent = { ...this.state.modal };
+        this.flash('已複製：' + this._clipEvent.title);
+      } else if (!isInput && (e.ctrlKey || e.metaKey) && e.key === 'v' && this._clipEvent) {
+        e.preventDefault();
+        const ds = this.state.selected;
+        const pasted = { ...this._clipEvent, id: Date.now()+'', date: ds };
+        this.pushUndo();
+        this.setState(s => ({ events: [...s.events, pasted] }));
+        this.flash('已貼上到 ' + (this.parse(ds).getMonth()+1) + '/' + this.parse(ds).getDate());
       }
     };
     document.addEventListener('keydown', this._onKeydown);
