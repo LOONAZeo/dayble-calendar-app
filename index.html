@@ -316,7 +316,24 @@ class Component extends DCLogic {
   undoLast(){ if(!this._history.length){ this.flash('沒有可以復原的操作'); return; } this._redoStack.push({ events:[...this.state.events], todos:[...this.state.todos] }); const p=this._history.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已復原 ↩'); }
   redoLast(){ if(!this._redoStack.length){ this.flash('沒有可以重做的操作'); return; } this._history.push({ events:[...this.state.events], todos:[...this.state.todos] }); const p=this._redoStack.pop(); this.setState({ events:p.events, todos:p.todos }); this.flash('已重做 ↪'); }
 
-  requestNotifPerm(){ if(!('Notification' in window)) return; Notification.requestPermission().then(p=>{ this._notifPerm=p; if(p==='granted') this.flash('提醒通知已開啟 🔔'); }); }
+  requestNotifPerm(){
+    if(!('Notification' in window)){ this.flash('此裝置不支援通知，請改用瀏覽器開啟'); return; }
+    Notification.requestPermission().then(p=>{
+      this._notifPerm=p; this.forceUpdate();
+      if(p==='granted'){ this.flash('提醒通知已開啟 🔔'); this._notify('🔔 Dayble',{ body:'通知已開啟，到時間會提醒你' }); }
+      else this.flash('通知被拒絕，請到瀏覽器設定開啟');
+    });
+  }
+  // 手機瀏覽器禁止 new Notification()，必須走 Service Worker；桌面則 fallback
+  _notify(title,opts){
+    const o=Object.assign({ icon:'icons/icon-192.png', badge:'icons/icon-192.png' }, opts);
+    if('serviceWorker' in navigator && navigator.serviceWorker.ready){
+      navigator.serviceWorker.ready.then(reg=>{
+        if(reg && reg.showNotification) reg.showNotification(title,o);
+        else { try{ new Notification(title,o); }catch(e){} }
+      }).catch(()=>{ try{ new Notification(title,o); }catch(e){} });
+    } else { try{ new Notification(title,o); }catch(e){} }
+  }
   _checkNotifications(){
     if(this._notifPerm!=='granted') return;
     const now=new Date(); const todayStr=this.toStr(now);
@@ -328,7 +345,7 @@ class Component extends DCLogic {
       const key=ev.id+'_'+todayStr;
       if(nowMin>=fireMin && nowMin<=fireMin+1 && !this._notified.has(key)){
         this._notified.add(key);
-        try{ new Notification('📅 '+ev.title,{ body:ev.start+' · '+this.catOf(ev.cat).name.split(' ')[0], icon:'icons/icon-192.png' }); }catch(e){}
+        this._notify('📅 '+ev.title,{ body:ev.start+' · '+this.catOf(ev.cat).name.split(' ')[0], tag:key });
       }
     });
   }

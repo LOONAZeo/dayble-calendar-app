@@ -1,6 +1,6 @@
 /* Dayble service worker — offline-first cache.
    Bump CACHE_VERSION whenever index.html / runtime.js change so clients update. */
-const CACHE_VERSION = 'dayble-v1';
+const CACHE_VERSION = 'dayble-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,17 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
+  );
+});
+
+// 點擊通知 → 聚焦既有分頁，沒有就開新分頁
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) { if ('focus' in c) return c.focus(); }
+      if (self.clients.openWindow) return self.clients.openWindow('./');
+    })
   );
 });
 
