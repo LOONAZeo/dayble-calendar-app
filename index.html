@@ -84,7 +84,7 @@ class Component extends DCLogic {
   };
 
   HH = 52;
-  today = (()=>{ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })();
+  get today(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); }
   holidays = {
     '2026-01-01':'元旦','2026-02-14':'情人節','2026-02-17':'春節','2026-04-04':'兒童節',
     '2026-04-05':'清明節','2026-05-01':'勞動節','2026-06-19':'端午節','2026-09-25':'中秋節',
@@ -619,8 +619,11 @@ class Component extends DCLogic {
 
   eventChip(inst, compact){
     const T=this.theme, h=React.createElement, c=this.catOf(inst.cat);
-    return h('button',{ key:inst.id+inst._date, onClick:(e)=>{e.stopPropagation();this.openEdit(this.state.events.find(x=>x.id===inst.id));},
-      style:{display:'block',width:'100%',textAlign:'left',border:'none',cursor:'pointer',background:c.soft,borderLeft:'3px solid '+c.dot,
+    return h('button',{ key:inst.id+inst._date,
+      draggable:true,
+      onDragStart:(e)=>{ e.stopPropagation(); this._dragId=inst.id; e.dataTransfer.effectAllowed='move'; },
+      onClick:(e)=>{e.stopPropagation();this.openEdit(this.state.events.find(x=>x.id===inst.id));},
+      style:{display:'block',width:'100%',textAlign:'left',border:'none',cursor:'grab',background:c.soft,borderLeft:'3px solid '+c.dot,
         borderRadius:7,padding:compact?'2px 6px':'4px 8px',marginBottom:3,overflow:'hidden'} },
       h('div',{ style:{fontSize:compact?11:12,fontWeight:700,color:c.ink,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'} },
         (compact?'':inst.start+' ')+inst.title));
@@ -642,7 +645,21 @@ class Component extends DCLogic {
             const list=this.instancesOn(ds);
             const hol=this.holidays[ds];
             const max=S.isMobile?2:3;
-            return h('div',{ key:ds, onClick:()=>{this.pickDate(ds);}, onDoubleClick:()=>this.openNew(ds,'09:00'),
+            return h('div',{ key:ds,
+              onClick:()=>{this.pickDate(ds);},
+              onDoubleClick:()=>this.openNew(ds,'09:00'),
+              onDragOver:(e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; },
+              onDrop:(e)=>{ e.preventDefault(); if(!this._dragId) return;
+                const ev=this.state.events.find(x=>x.id===this._dragId); this._dragId=null;
+                if(!ev||ev.date===ds) return;
+                this.pushUndo();
+                const diff=this.parse(ds)-this.parse(ev.date);
+                const days=Math.round(diff/86400000);
+                this.setState(s=>({ events:s.events.map(x=>x.id===ev.id
+                  ? {...x, date:ds, ...(x.endDate?{endDate:this.addDays(x.endDate,days)}:{}) }
+                  : x) }));
+                this.flash('已移至 '+(this.parse(ds).getMonth()+1)+'/'+(this.parse(ds).getDate()));
+              },
               style:{background:inM?T.panel:'#f6f2f8',border:'1.5px solid '+(sel?T.primary:T.line),borderRadius:14,padding:S.isMobile?'5px 5px':'7px 8px',
                 overflow:'hidden',cursor:'pointer',opacity:inM?1:.6,display:'flex',flexDirection:'column',minHeight:0} },
               h('div',{ style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3} },
