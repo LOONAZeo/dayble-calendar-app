@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dayble 行事曆</title>
 <meta name="description" content="Dayble — 簡潔可愛的中英雙語行事曆，支援週/日/月/議程檢視、分類、重複與提醒。">
-<meta name="theme-color" content="#ff7aa8" id="meta-theme-color">
-<meta name="msapplication-navbutton-color" content="#ff7aa8" id="meta-nav-color">
+<meta name="theme-color" content="#faf7fb" id="meta-theme-color">
+<meta name="msapplication-navbutton-color" content="#faf7fb" id="meta-nav-color">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,10 +25,15 @@
   var ink={pink:'#3f3947',purple:'#3b2560',blue:'#1a2a45',green:'#1a3d2e',coral:'#42201a',
     wenjing:'#3a2812',beach:'#0e3d50',forest:'#1a3020',animal:'#3a1808',sakura:'#4a1828',
     dark:'#f0ecff',night:'#e0d8ff'};
+  var pri={pink:'#ff7aa8',purple:'#a670e8',blue:'#4a90d9',green:'#3db882',coral:'#f0705a',
+    wenjing:'#b8895a',beach:'#1aa8c8',forest:'#4a7c5a',animal:'#e07838',sakura:'#d9688a',
+    dark:'#a78bfa',night:'#6a5acd'};
   var k=d.themePreset&&bg[d.themePreset]?d.themePreset:'pink';
   var s=document.documentElement.style;
-  s.setProperty('--bg',bg[k]); s.setProperty('--ink',ink[k]);
+  s.setProperty('--bg',bg[k]); s.setProperty('--ink',ink[k]); s.setProperty('--primary',pri[k]);
   s.background=bg[k]; document.documentElement.style.background=bg[k];
+  // 標題列顏色設為主題背景色，讓視窗重繪時不會閃粉色
+  document.querySelectorAll('meta[name="theme-color"],meta[name="msapplication-navbutton-color"]').forEach(function(m){ m.content=bg[k]; });
 }catch(e){}}());
 </script>
 <script src="runtime.js"></script>
@@ -311,8 +316,8 @@ class Component extends DCLogic {
     if(appRoot) appRoot.style.fontFamily=T.font||baseFont;
     const mc=document.getElementById('meta-theme-color');
     const mn=document.getElementById('meta-nav-color');
-    if(mc) mc.content=T.primary;
-    if(mn) mn.content=T.primary;
+    if(mc) mc.content=T.bg;
+    if(mn) mn.content=T.bg;
     const ab=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     if(ab) ab.content=T.bg.startsWith('#1')||T.bg.startsWith('#2')?'black':'default';
   }
