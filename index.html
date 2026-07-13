@@ -40,7 +40,8 @@
     * { box-sizing: border-box; }
     :root { --bg:#faf7fb; --ink:#3f3947; --primary:#ff7aa8; --line:#efe9f2; --panel:#ffffff; --sub:#8f8899; }
     html, body { margin: 0; padding: 0; height: 100%; }
-    body { font-family: 'Nunito','Noto Sans TC',sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); background: var(--bg); transition: background .25s, color .25s; }
+    body { font-family: 'Nunito','Noto Sans TC',sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); background: var(--bg); }
+    html.ready body, html.ready #app-root { transition: background .25s, color .25s; }
     a { color: var(--primary); text-decoration: none; }
     a:hover { filter: brightness(.85); }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -55,7 +56,7 @@
     .todo-row:hover button:last-child { opacity: 1 !important; }
 </style>
 </helmet>
-<div id="app-root" style="height:100vh;width:100%;display:flex;overflow:hidden;background:#faf7fb;position:relative;transition:background .25s">
+<div id="app-root" style="height:100vh;width:100%;display:flex;overflow:hidden;background:var(--bg);position:relative">
   {{ sidebar }}
   {{ backdrop }}
   <main style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
@@ -185,6 +186,8 @@ class Component extends DCLogic {
     this._checkNotifications();
     this._syncScheduledNotifs();
     this.applyThemeToDom(this.theme);
+    // 初始顏色已就位後才啟用過渡，避免載入 / 視窗重繪時淡入閃爍
+    requestAnimationFrame(()=>document.documentElement.classList.add('ready'));
 
     // 跨分頁同步：同一瀏覽器另開分頁修改時，這裡即時更新
     this._onStorage = (e) => {
